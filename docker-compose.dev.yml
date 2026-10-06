@@ -1,0 +1,42 @@
+services:
+  # SvelteKit application
+  front:
+    image: node:22.12.0-alpine
+    working_dir: /app
+    container_name: front
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./front/.env
+    volumes:
+      - ./front:/app
+      - front_node_modules:/app/node_modules
+    networks:
+      - app-network
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  # Hono with Bun application
+  back:
+    image: oven/bun:latest
+    working_dir: /app
+    container_name: back
+    ports:
+      - "3000:3000" 
+    env_file:
+      - ./back/.env
+    volumes:
+      - ./back:/app
+      - back_node_modules:/app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    command: sh -c "bun install && bun --watch src/index.ts"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  front_node_modules:
+  back_node_modules:

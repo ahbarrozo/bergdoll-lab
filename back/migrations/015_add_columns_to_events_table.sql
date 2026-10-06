@@ -1,0 +1,5 @@
+ALTER TABLE events 
+    ADD COLUMN start VARCHAR(25),
+    ADD COLUMN stop VARCHAR(25),
+    ADD COLUMN type VARCHAR(25)
+;

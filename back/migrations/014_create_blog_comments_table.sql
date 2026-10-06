@@ -1,0 +1,7 @@
+CREATE TABLE blog_comments (
+    id SERIAL PRIMARY KEY,
+    blog_post_id INTEGER REFERENCES blog_posts(id),
+    author VARCHAR(100) NOT NULL,
+    text TEXT NOT NULL,
+    date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

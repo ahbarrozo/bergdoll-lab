@@ -1,0 +1,168 @@
+@import 'tailwindcss';
+@plugin 'daisyui';
+
+@plugin 'daisyui/theme' {
+    name: "cupcake";
+    default: true;
+    /* --color-base-100: #282e52;
+    --color-base-200: #282e52;
+    --color-base-300: #131832; */
+    /* --color-primary: #1c4f4a;
+    --color-base-content: #1c4f4a; */
+    --color-base-300: #f8f5ff;
+    /* --color-primary: #572e4f; */
+    --color-base-content: #000066;
+    --color-primary: #000066;
+    /*--color-secondary: #1c5f17; */
+    --color-secondary-highlight: var(--color-accent-content);
+    /* --color-success: #01a165;
+    --background: #f5f3ef; */
+    --background: #f8f5ff;
+    --blog-card-background: var(--color-base-100);
+    --card-p: 1.5rem;
+}
+
+@font-face {
+    font-family: 'Questrial';
+    src: url('./assets/fonts/Questrial-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+body {
+    font-family: Questrial;
+    background: var(--background);
+    padding: 1rem;
+}
+
+/* 
+fieldset {
+    min-width: 0;
+} */
+
+h1 {
+    font-size: 6rem;
+    font-weight: 900;
+}
+
+h2 {
+    font-size: 3rem;
+    font-weight: 800;
+}
+
+input:focus {
+    outline: none;
+}
+
+input .active {
+    background: var(--color-primary);
+    color: white;
+}
+
+
+p {
+    font-size: 1.5rem;
+    text-justify: auto;
+
+}
+
+/* a paragraph proceeded by another paragraph will have a top margin */
+p+p {
+    margin-top: 0.5rem;
+}
+
+p+h2 {
+    margin-top: 2rem;
+}
+
+strong {
+    font-weight: 700
+}
+
+a:hover,
+button:hover,
+.icon:hover {
+    color: var(--color-secondary-highlight);
+    cursor: pointer;
+    transition: color 0.125s;
+}
+
+.app {
+    /*background-color: var(--color-base-300); */
+    background-color: var(--background);
+}
+
+.badge {
+    color: white;
+}
+
+.btn-active {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-circle {
+    border-color: transparent;
+    color: var(--color-primary) !important;
+}
+
+.btn-circle:hover {
+    border-color: transparent;
+    color: var(--color-accent-content) !important;
+}
+
+.btn {
+    /* background: var(--color-primary); */
+    color: white;
+}
+
+.btn-outline {
+    color: var(--color-primary) !important;
+}
+
+.btn-outline:hover {
+    color: white !important;
+}
+
+.btn-primary {
+    /* background: var(--color-primary); */
+    color: white;
+}
+
+.btn-primary:hover {
+    /* background: var(--color-primary); */
+    color: var(--color-accent);
+}
+
+.btn-square:hover {
+    color: var(--color-accent);
+}
+
+.calendar-nav-button {
+    background: var(--color-base-100);
+    width: 24px;
+    height: 24px;
+    stroke: white;
+    stroke-width: 1.5;
+    fill: none;
+    cursor: pointer;
+    border: none;
+}
+
+.card {
+    background: var(--blog-card-background);
+    padding: 1rem;
+}
+
+.divider {
+    margin: 2rem;
+}
+
+.hero {
+    background: var(--blog-card-background);
+    border-radius: 1rem;
+    margin: 2.5rem;
+    padding: 1rem;
+    width: 97%;
+}

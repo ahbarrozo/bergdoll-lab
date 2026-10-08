@@ -11,7 +11,7 @@ RUN bun build src/index.ts --outdir dist --target bun
 
 
 # Frontend build
-FROM node:22.12.0-alpine AS front-build
+FROM node:22.13.0-alpine AS front-build
 
 WORKDIR /app/front
 
@@ -23,7 +23,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Final combined image
-FROM node:22.12.0-alpine
+FROM node:22.13.0-alpine
 
 WORKDIR /apps
 

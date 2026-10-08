@@ -8,7 +8,7 @@ import { authGuard } from './auth';
 const people = new Hono<{ Variables: AppVariables }>();
 
 /**
- *  GET all works while joining all the images associated
+ *  GET all people while joining all the images associated
 
  *  with them and ordering by post date. Then the result is
  *  parsed to include all images in a single array inside the
@@ -22,7 +22,7 @@ people.get('/', async (c) => {
 		? `AND im.locale = '${query}' `
 		: '';
 	const whereClause: string = query
-		? `WHERE pp.locale = '${query}'`
+		? `WHERE pp.locale = '${query}' `
 		: '';
 	try {
 		const result = await pool.query(`
@@ -31,12 +31,11 @@ people.get('/', async (c) => {
 				pp.description, pp.locale,    
                 im.id AS image_id, im.path AS image_path,
                 im.title AS image_title, im.description AS image_description,
-				im.locale AS image_locale
+				im.locale AS image_locale 
             FROM 
                 people pp 
-
             LEFT JOIN
-                people_images ppi ON pp.id = ppi.work_id
+                people_images ppi ON pp.id = ppi.person_id
             LEFT JOIN
                 images im ON ppi.image_id = im.id ${andClause}
 			${whereClause}
@@ -89,8 +88,8 @@ people.get('/', async (c) => {
 });
 
 /**
- *  POST request to create a new work entry. It will insert the
- *  new rows at the people, work_images and images tables
+ *  POST request to create a new person entry. It will insert the
+ *  new rows at the people, peron_images and images tables
 
  */
 people.post('/', authGuard, async (c) => {
@@ -157,7 +156,7 @@ people.post('/', authGuard, async (c) => {
 });
 
 /**
- *  PUT request to update an work based on its ID. It will
+ *  PUT request to update a person based on its ID. It will
  *  check its existence, fetch images associated with it, and update
  *  all the fields available at the submission form, images included,
  *  if needed
@@ -191,7 +190,7 @@ people.put('/:id', authGuard, async (c) => {
 		);
 
 		if (checkPerson.rows.length === 0) {
-			return c.json({ error: 'Work not found' }, 404);
+			return c.json({ error: 'Person not found' }, 404);
 		}
 
 		await pool.query(`
@@ -207,11 +206,11 @@ people.put('/:id', authGuard, async (c) => {
 
 		const peopleImagesResults = await pool.query(`
             SELECT 
-                ppi.image_id, ppi.work_id 
+                ppi.image_id, ppi.person_id 
             FROM 
                 people_images ppi
             WHERE 
-                ppi.work_id = $1;`,
+                ppi.person_id = $1;`,
 			[id]
 		);
 
@@ -277,7 +276,7 @@ people.put('/:id', authGuard, async (c) => {
 	}
 });
 
-// DELETE request to delete a work based on its ID
+// DELETE request to delete a person based on its ID
 people.delete('/:id', authGuard, async (c) => {
 
 	const pool: Pool = c.get('db');
@@ -322,7 +321,6 @@ people.delete('/:id', authGuard, async (c) => {
 		await pool.query(`
             DELETE FROM 
 				people 
-
 			WHERE 
 				id = $1`,
 			[id]
@@ -330,14 +328,14 @@ people.delete('/:id', authGuard, async (c) => {
 
 		return c.json(
 			{
-				message: 'Work deleted successfully',
+				message: 'Person deleted successfully',
 				id
 			},
 			200
 		);
 	} catch (error) {
-		console.error('Error deleting work: ', error);
-		return c.json({ error: 'Failed to delete work' }, 500);
+		console.error('Error deleting person: ', error);
+		return c.json({ error: 'Failed to delete person' }, 500);
 	}
 });
 

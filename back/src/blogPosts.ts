@@ -5,7 +5,6 @@ import { Image, ImageDTO } from './types/Image.type';
 import { BlogPost, BlogPostDTO } from './types/BlogPost.type';
 import { authGuard } from './auth';
 import { Document, DocumentDTO } from './types/Document.types';
-import { Audio, AudioDTO } from './types/Audio.types';
 
 const blogPosts = new Hono<{ Variables: AppVariables }>();
 
@@ -25,9 +24,6 @@ blogPosts.get('/', async (c) => {
     const andClauseDocument: string = query
         ? `AND d.locale = '${query}' `
         : '';
-    const andClauseAudio: string = query
-        ? `AND a.locale = '${query}' `
-        : '';
     const whereClause: string = query
         ? `WHERE bp.locale = '${query}'`
         : '';
@@ -42,20 +38,13 @@ blogPosts.get('/', async (c) => {
                 im.description AS image_description,  
                 d.id AS document_id, d.path AS document_path,
                 d.title AS document_title, d.locale AS document_locale, 
-                d.description AS document_description,
-                a.id AS audio_id, a.path AS audio_path,
-                a.title AS audio_title, a.locale AS audio_locale, 
-                a.description AS audio_description 
+                d.description AS document_description
             FROM 
                 blog_posts bp
             LEFT JOIN
                 blog_posts_images bpi ON bp.id = bpi.blog_post_id
             LEFT JOIN
                 images im ON bpi.image_id = im.id ${andClauseImage}
-            LEFT JOIN
-                blog_posts_audios bpa ON bp.id = bpa.blog_post_id
-            LEFT JOIN
-                audios a ON bpa.audio_id = a.id ${andClauseAudio}
             LEFT JOIN
                 blog_posts_documents bpd ON bp.id = bpd.blog_post_id
             LEFT JOIN
@@ -85,15 +74,6 @@ blogPosts.get('/', async (c) => {
                     locale: row.document_locale
                 }
                 : null;
-            const audio: Audio | null = row.audio_id
-                ? {
-                    id: row.audio_id,
-                    description: row.audio_description,
-                    path: row.audio_path,
-                    title: row.audio_title,
-                    locale: row.audio_locale
-                }
-                : null;
 
             const existingBlogPost: BlogPost = rows.find((r: BlogPost) => r.id === row.id);
 
@@ -104,8 +84,6 @@ blogPosts.get('/', async (c) => {
                     existingBlogPost.images.push(image);
                 if (document && !existingBlogPost.documents.find((d: Document) => document.id === d.id))
                     existingBlogPost.documents.push(document);
-                if (audio && !existingBlogPost.audios.find((a: Audio) => audio.id === a.id))
-                    existingBlogPost.audios.push(audio);
             } else {
                 const blogPost: BlogPost = {
                     id: row.id,
@@ -118,12 +96,10 @@ blogPosts.get('/', async (c) => {
                     type: row.type,
                     images: [],
                     documents: [],
-                    audios: []
                 };
 
                 if (image) blogPost.images.push(image);
                 if (document) blogPost.documents.push(document);
-                if (audio) blogPost.audios.push(audio);
 
                 rows.push(blogPost);
             }
@@ -155,7 +131,6 @@ blogPosts.post('/', async (c) => {
             type: data.get('type')! && data.get('type')!.toString() // nullable field
         };
 
-        const audios: AudioDTO[] = JSON.parse(data.get('audios')!.toString());
         const documents: DocumentDTO[] = JSON.parse(data.get('documents')!.toString());
         const images: ImageDTO[] = JSON.parse(data.get('images')!.toString());
 
@@ -196,35 +171,6 @@ blogPosts.post('/', async (c) => {
                     VALUES 
                         ($1, $2);`,
                     [blogPostId, imageId]
-                );
-            })
-        );
-
-        // Saving audios
-        const resultAudiosPromises = audios.map(async (audio) => {
-            const resultAudio = await pool.query(`
-                INSERT INTO 
-                    audios (path, description, title, locale)
-                VALUES 
-                    ($1, $2, $3, $4)
-                RETURNING 
-                    id;`,
-                [audio.path, audio.description, audio.title, audio.locale]
-            );
-
-            return resultAudio.rows[0].id;
-        });
-
-        const resultAudios = await Promise.all(resultAudiosPromises);
-
-        await Promise.all(
-            resultAudios.map(async (audioId) => {
-                await pool.query(`
-                    INSERT INTO 
-                        blog_posts_documents (blog_post_id, document_id)
-                    VALUES 
-                        ($1, $2);`,
-                    [blogPostId, audioId]
                 );
             })
         );
@@ -282,7 +228,6 @@ blogPosts.put('/:id', authGuard, async (c) => {
         locale: data.get('locale')!.toString(),
         type: data.get('type')! && data.get('type')!.toString() // nullable field
     };
-    const audios: AudioDTO[] = JSON.parse(data.get('audios')!.toString());
     const documents: DocumentDTO[] = JSON.parse(data.get('documents')!.toString());
     const images: ImageDTO[] = JSON.parse(data.get('images')!.toString());
 
@@ -375,73 +320,6 @@ blogPosts.put('/:id', authGuard, async (c) => {
                         WHERE 
                             id = $5;`,
                         [image.path, image.description, image.title, image.locale, image.id]
-                    );
-                }
-
-            })
-        );
-
-        const blogPostsAudiosResults = await pool.query(
-            `
-            SELECT 
-                bpa.audio_id, bpa.blog_post_id, 
-                a.id, a.path, a.description, a.title 
-            FROM 
-                blog_posts_audios bpa
-            LEFT JOIN 
-                audios a ON a.id = bpa.audio_id
-            WHERE 
-                bpa.blog_post_id = $1;`,
-            [id]
-        );
-
-        const audiosToDelete = blogPostsAudiosResults.rows.filter(
-            (audio) => !audios.map((a) => a.id).includes(audio.audio_id)
-        );
-        const audiosToUpsert = audios.filter(
-            (audio) => !audio.id || !audiosToDelete.map((a) => a.id).includes(audio.id)
-        );
-
-        await Promise.all(
-            audiosToDelete.map(async (audio) => {
-                await pool.query(`
-                    DELETE FROM 
-                        blog_posts_audios 
-                    WHERE 
-                        blog_post_id = $1 AND audio_id = $2`,
-                    [id, audio.id]);
-            })
-        );
-
-        await Promise.all(
-            audiosToUpsert.map(async (audio) => {
-                if (!audio.id) {
-                    const result = await pool.query(`
-                        INSERT INTO 
-                            audios (path, description, title, locale)
-                        VALUES 
-                            ($1, $2, $3, $4)
-                        RETURNING 
-                            id;`,
-                        [audio.path, audio.description, audio.title, audio.locale]
-                    );
-
-                    await pool.query(`
-                        INSERT INTO 
-                            blog_posts_audios (blog_post_id, audio_id) 
-                        VALUES
-                            ($1, $2);`,
-                        [id, result.rows[0].id]
-                    );
-                } else {
-                    await pool.query(`
-                        UPDATE 
-                            documents 
-                        SET 
-                            path = $1, description = $2, title = $3, locale = $4   
-                        WHERE 
-                            id = $5;`,
-                        [audio.path, audio.description, audio.title, audio.locale, audio.id]
                     );
                 }
 
@@ -556,27 +434,6 @@ blogPosts.delete('/:id', authGuard, async (c) => {
             await pool.query(`
                 DELETE FROM 
                     blog_posts_images 
-                WHERE 
-                    blog_post_id = $1`,
-                [id]
-            );
-        }
-
-        const checkBlogPostAudios = await pool.query(`
-            SELECT 
-                blog_post_id 
-            FROM 
-                blog_posts_audios 
-            WHERE 
-                blog_post_id = $1;`,
-            [id]
-        );
-
-
-        if (checkBlogPostAudios.rows.length > 0) {
-            await pool.query(`
-                DELETE FROM 
-                    blog_posts_audios 
                 WHERE 
                     blog_post_id = $1`,
                 [id]

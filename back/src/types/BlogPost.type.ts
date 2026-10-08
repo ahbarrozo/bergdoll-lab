@@ -1,4 +1,3 @@
-import { Audio } from './Audio.types';
 import { Document } from './Document.types';
 import { Image } from './Image.type';
 
@@ -12,7 +11,6 @@ export interface BlogPost {
 	type?: string;
 	images: Image[];
 	documents: Document[];
-	audios: Audio[];
 	locale: string;
 }
 
